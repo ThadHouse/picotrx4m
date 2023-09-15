@@ -111,12 +111,14 @@ pub struct Leds {
 
 impl Leds {
     pub fn write(&self, tx: &mut Tx<(PIO0, SM0)>) {
-        tx.write(self.front_left.into());
-        tx.write(self.front_right.into());
-        tx.write(self.rear_right.into());
-        tx.write(self.rear_left.into());
-        tx.write(0xFF000000u32);
-        tx.write(0);
-        tx.write(42);
+        critical_section::with(|_cs| {
+            tx.write(self.front_left.into());
+            tx.write(self.front_right.into());
+            tx.write(self.rear_right.into());
+            tx.write(self.rear_left.into());
+            tx.write(0xFF000000u32);
+            tx.write(0);
+            tx.write(42);
+        });
     }
 }

@@ -13,6 +13,7 @@ use panic_probe as _;
 use rp2040_hal as hal;
 
 mod lights;
+mod receiver;
 
 // Provide an alias for our BSP so we can switch targets quickly.
 // Uncomment the BSP you included in Cargo.toml, the rest of the code does not need to change.
@@ -20,7 +21,10 @@ mod lights;
 
 use hal::{clocks::Clock, pac, watchdog::Watchdog};
 
-use crate::lights::{initialize_lights, FrontLeds, Leds, RearLeds};
+use crate::{
+    lights::{initialize_lights, FrontLeds, Leds, RearLeds},
+    receiver::initialize_receiver,
+};
 
 #[allow(unsafe_code)]
 #[link_section = ".boot2"]
@@ -63,6 +67,16 @@ fn main() -> ! {
         &mut pac.RESETS,
     );
 
+    let receiver = initialize_receiver(
+        pac.TIMER,
+        &mut pac.RESETS,
+        &clocks,
+        pac.PWM,
+        pins.gpio3,
+        pins.gpio5,
+        pins.gpio4,
+    );
+
     let pin = pins
         .gpio8
         .into_push_pull_output_in_state(hal::gpio::PinState::Low)
@@ -98,6 +112,13 @@ fn main() -> ! {
         };
 
         leds.write(&mut tx);
+
+        println!(
+            "{} {} {}",
+            receiver.steering(),
+            receiver.throttle(),
+            receiver.has_watchdog_expired()
+        );
 
         delay.delay_ms(500);
 
